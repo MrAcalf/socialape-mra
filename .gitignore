@@ -5,7 +5,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 firebase-debug.log*
-socialape-mra-firebase-adminsdk-txi6l-11a6a0a1e1.json
+serviceaccountkey.json
+dbschema.js
 
 # Firebase cache
 .firebase/
