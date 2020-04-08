@@ -1,4 +1,5 @@
 let serviceAccount = require('./serviceaccountkey.json')
+// service account key file name shoudn´t be capitalized cause it return a deploy issue.
 const functions = require('firebase-functions')
 const admin = require('firebase-admin')
 admin.initializeApp({
@@ -13,9 +14,6 @@ const firebase = require('firebase')
 firebase.initializeApp(config)
 
 const db = admin.firestore()
-
-// service account key file name shoudn´t be capitalized cause it return a deploy issue.
-
 
 app.get('/screams', (req, res) => {
     db
@@ -37,10 +35,46 @@ app.get('/screams', (req, res) => {
         .catch(err => console.error(err))
 })
 
-app.post('/scream', (req, res) => {
+
+const FBAuth = (req, res, next) => {
+    let idToken
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer ')
+    ) {
+        idToken = req.headers.authorization.split('Bearer ')[1]
+    } else {
+        console.error('No token found')
+        return res.status(403).json({ error: 'Unauthorized' })
+    }
+
+    admin
+        .auth()
+        .verifyIdToken(idToken)
+        .then((decodedToken) => {
+            req.user = decodedToken
+            console.log(decodedToken)
+            return db
+                .collection('users')
+                .where('userId', '==', req.user.uid)
+                .limit(1)
+                .get()
+        })
+        .then((data) => {
+            req.user.handle = data.docs[0].data().handle
+            return next()
+        })
+        .catch((err) => {
+            console.error('Error while verifying token ', err)
+            return res.status(403).json(err)
+        })
+}
+
+// Post one Scream
+app.post('/scream',FBAuth, (req, res) => {
     const newScream = {
         body: req.body.body,
-        userHandle: req.body.userHandle,
+        userHandle: req.user.handle,
         createdAt: new Date().toISOString()
     }
 
@@ -58,14 +92,14 @@ app.post('/scream', (req, res) => {
 
 const isEmail = (email) => {
     const regEx = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    if (email.match(regEx)) return true;
-    else return false;
-};
+    if (email.match(regEx)) return true
+    else return false
+}
 
 const isEmpty = (string) => {
-    if (string.trim() === '') return true;
-    else return false;
-};
+    if (string.trim() === '') return true
+    else return false
+}
 
 //sign up route
 
@@ -85,13 +119,13 @@ if (isEmpty(newUser.email)) {
     errors.email = 'Must be a valid email address'
 }
 
-if (isEmpty(newUser.password)) errors.password = 'Must not be empty';
+if (isEmpty(newUser.password)) errors.password = 'Must not be empty'
 if (newUser.password !== newUser.confirmPassword) errors.confirmPassword = 'Passwords must match'
 if (isEmpty(newUser.handle)) errors.handle = 'Must not be empty'
 if (Object.keys(errors).length > 0) return res.status(400).json(errors)
 
     // TODO: validate data
-    let token, userId;
+    let token, userId
     db.doc(`/users/${newUser.handle}`)
         .get()
         .then((doc) => {
@@ -115,7 +149,7 @@ if (Object.keys(errors).length > 0) return res.status(400).json(errors)
         createdAt: new Date().toISOString(),
         userId
     }
-    return db.doc(`/users/${newUser.handle}`).set(userCredentials);
+    return db.doc(`/users/${newUser.handle}`).set(userCredentials)
     })
     .then(() => {
         return res.status(201).json({ token })
