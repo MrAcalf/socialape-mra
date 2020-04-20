@@ -4,7 +4,10 @@ const {
     getAllScreams, 
     postOneScream, 
     getScream, 
-    commentOnScream 
+    commentOnScream,
+    likeScream,
+    unlikeScream,
+    deleteScream
 } = require('./handlers/screams')
 const {
     signup, 
@@ -33,9 +36,12 @@ app.get('/user', FBAuth, getAuthenticatedUser)
 app.get('/scream/:screamId', getScream)
 // Comment a scream route
 app.post('/scream/:screamId/comment', FBAuth, commentOnScream)
-// TODO: delete a scream
-// TODO: like a scream
-// TODO: unlike a scream
+// Like a scream route
+app.get('/scream/:screamId/like', FBAuth, likeScream)
+// Unlike a scream route
+app.get('/scream/:screamId/unlike', FBAuth, unlikeScream)
+// Delete a scream route
+app.delete('/scream/:screamId', FBAuth, deleteScream)
 
 
 exports.api = functions.region('us-east1').https.onRequest(app)
