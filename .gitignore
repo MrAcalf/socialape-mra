@@ -10,6 +10,8 @@ dbschema.js
 package-lock.json
 firebaseconfig.json
 yarn.lock
+firestore.indexes.json
+firestore.rules
 
 # Firebase cache
 .firebase/
